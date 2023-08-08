@@ -1,0 +1,2 @@
+UPLOAD_DIRECTORY_PATH=/path/to/your/desired/directory
+PORT=3000

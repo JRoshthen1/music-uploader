@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Music Upload</title>
+    <link rel="stylesheet" href="/src/styles.css">
+  </head>
+  <body>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+      <input type="file" name="single-file" />
+      <label for="title">Title</label>
+      <input type="text" name="title" />
+      <label for="author">Artist</label>
+      <input type="text" name="author" />
+      <label for="album">Album</label>
+      <input type="text" name="album" />
+      <label for="year">Year</label>
+      <input type="text" name="year" />
+      <label for="genre">Genre</label>
+      <input type="text" name="genre" />
+      <input type="submit" value="Submit" />
+    </form>
+  </body>
+  <style>
+    body {
+      width: 100%;
+      display: flex;
+      justify-content: center;    }
+    input[type="text"] {
+      padding: 6px;
+      margin: 4px 0;
+    }
+    label {
+      margin: 12px 0 0 0;
+    }
+    form {
+      width: 50%;
+      display: flex;
+      flex-direction: column;
+    }
+    input[type="submit"] {
+      margin: 16px 0;
+      padding: 10px 0;
+      border: solid 1px rgb(0, 44, 97);
+      background-color: rgb(0, 108, 241);
+      color: white;
+    }
+    input[type="file"] {
+      border: 1px solid #8f8f9d;
+      padding: 10px;
+    }
+
+  </style>
+</html>
