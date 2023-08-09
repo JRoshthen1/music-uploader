@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="styles.css">
+    
+    <title>Music Upload</title>
+  </head>
+  <body>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+
+      <input type="file" name="file_upload" />
+
+      <div class="checkbox-container">
+        <div id="switch-title-name-container">
+          <input type="checkbox" name="titleSwitch">
+          <label for="titleSwitch">Use file name as title?</label>
+        </div>
+
+        <input type="checkbox" name="allMetadataSwitch">
+        <label for="allMetadataSwitch">Keep all metadata</label>
+      </div>
+      
+      <label for="title">Title</label>
+      <input type="text" name="title" />
+      <label for="artist">Artist</label>
+      <input type="text" name="artist" />
+      <label for="album">Album</label>
+      <input type="text" name="album" />
+      <label for="genre">Genre</label>
+      <input type="text" name="genre" />
+      <input type="submit" value="Submit" />
+    </form>
+  </body>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const switchTitleNameContainer = document.getElementById("switch-title-name-container");
+    const switchTitleName = document.querySelector("input[name='titleSwitch']");
+
+    const switchAllMetadata = document.querySelector("input[name='allMetadataSwitch']")
+
+    const titleInputElement = document.querySelector("input[name='title']");
+    const allTextInputElements = document.querySelectorAll("input[type='text']")
+    
+    // disable Titleinput and clear their value when option 'Use file name as title' is enabled
+
+    switchTitleName.addEventListener("change", function() {
+      titleInputElement.disabled = switchTitleName.checked;
+    });
+    switchTitleName.checked = false;
+
+
+
+    // disable all inputs and clear their values when option 'keep all metadata' is enabled
+    switchAllMetadata.addEventListener("change", function() {
+      allTextInputElements.forEach(function(input) {
+        input.disabled = switchAllMetadata.checked, input.value = "";
+      })
+      if(switchAllMetadata.checked){
+        switchTitleName.checked = false
+        switchTitleNameContainer.style = 'display: none'
+      } else switchTitleNameContainer.style = 'display: block'
+      
+    });
+    switchAllMetadata.checked = false;
+
+
+
+  });
+
+
+  </script>
+
+
+</html>

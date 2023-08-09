@@ -25,11 +25,11 @@ To start the development server with nodemon (auto-restart on code changes), use
 
 `npm start`
 
-The server will be accessible at 'http://localhost:$PORT'.
+The server will be accessible at 'http://localhost:${PORT}'.
 
 ### Usage
 
-Open your web browser and navigate to http://localhost:3000.
+Open your web browser and navigate to http://localhost:${PORT}.
 Use the provided interface to select music files from your local machine.
 Fill in the metadata fields for each track, such as title, artist, album, etc.
 Click the "Submit" button to initiate the upload process.
@@ -38,7 +38,7 @@ The server will handle the file upload and metadata setting, providing relevant 
 ### Notes
 
 This application is a basic example and may require further customization for production use.
-Make sure you have Node.js@18 and npm@9 (Node Package Manager) installed on your machine before getting started.
+Make sure you have Node.js@18 and npm@9 installed on your machine before getting started.
 The remote server setup for storing the uploaded music files is not covered in this README.
 
 Happy uploading and enjoy the convenience of managing your music collection!

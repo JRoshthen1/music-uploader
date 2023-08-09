@@ -1,2 +1,5 @@
+# Full path where the uploaded files and folders will be stored
+# with / on the end
 UPLOAD_DIRECTORY_PATH=/path/to/your/desired/directory
+# Port on which the application will run on the remote server
 PORT=3000

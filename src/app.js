@@ -12,85 +12,7 @@ const musicDir = process.env.UPLOAD_DIRECTORY_PATH;
 
 app.get("/", (req, res) => {
   console.log(musicDir);
-  res.send(`<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <title>Music Upload</title>
-  </head>
-  <body>
-    <form action="/upload" method="post" enctype="multipart/form-data">
-      <input type="file" name="file_upload" />
-
-      <div class="checkbox-container">
-        <input type="checkbox" name="switch">
-        <label for="switch">Use file name as title?</label>
-      </div>
-      
-      <label for="title">Title</label>
-      <input type="text" name="title" />
-      <label for="artist">Artist</label>
-      <input type="text" name="artist" />
-      <label for="album">Album</label>
-      <input type="text" name="album" />
-      <label for="genre">Genre</label>
-      <input type="text" name="genre" />
-      <input type="submit" value="Submit" />
-    </form>
-  </body>
-
-  <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const checkboxElement = document.querySelector("input[name='switch']");
-    checkboxElement.checked = false;
-  });
-  const switchInput = document.querySelector("input[name='switch']");
-  const titleInputElement = document.querySelector("input[name='title']");
-  switchInput.addEventListener("change", function() {
-    if (switchInput.checked) {
-      titleInputElement.disabled = true;
-    } else {
-      titleInputElement.disabled = false;
-    }
-  });
-  </script>
-
-<style>
-body {
-  width: 100%;
-  display: flex;
-  justify-content: center;    }
-input[type="text"] {
-  padding: 6px;
-  margin: 4px 0;
-}
-label {
-  margin: 12px 0 0 0;
-}
-form {
-  width: 50%;
-  display: flex;
-  flex-direction: column;
-}
-input[type="submit"] {
-  margin: 16px 0;
-  padding: 10px 0;
-  border: solid 1px rgb(0, 44, 97);
-  background-color: rgb(0, 108, 241);
-  color: white;
-}
-input[type="file"] {
-  border: 1px solid #8f8f9d;
-  padding: 10px;
-}
-.checkbox-container{
-  margin: 16px 0;
-}
-</style>
-</html>
-`);
+  res.send("index.html");
 });
 
 app.post("/upload", (req, res) => {
@@ -102,31 +24,38 @@ app.post("/upload", (req, res) => {
     } else {
       const file = files.file_upload[0];
 
-      // metadata keys can be added according to ffmpeg docs
-      const metadata = {
-        title:
-          fields.switch == "on"
-            ? cleanFileNameForTitle(file.originalFilename)
-            : fields.title,
-        artist: fields.artist,
-        album: fields.album,
-        year: fields.year,
-        genre: fields.genre,
-      };
-
-      setVideoMetadata(file.filepath, metadata)
-        .then((outputFilename) => {
-          res.send(`
-          <p>"${outputFilename}" has been written.</p>
-          <br>
-          <a href='/'>Back to Home</a>`);
-        })
-        .catch((error) => {
-          console.error(error);
-          res.send(`<p>${error}</p>
-          <br>
-          <a href='/'>Back to Home</a>`);
-        });
+      // Keep all metadata
+      if (fields.allMetadataSwitch == "on") {
+        keepMetadataAndUploadTrack(file.filepath)
+          .then((outputFilename) => {
+            res.send(`
+        <p>"${outputFilename}" has been written.</p>
+        <br>
+        <a href='/'>Back to Home</a>`);
+          })
+          .catch((error) => {
+            console.error(error);
+            res.send(`<p>${error}</p>
+        <br>
+        <a href='/'>Back to Home</a>`);
+          });
+      }
+      // Set all metadata
+      else {
+        setMetadataAndUploadTrack(file.filepath, fields, file.originalFilename)
+          .then((outputFilename) => {
+            res.send(`
+                 <p>"${outputFilename}" has been written.</p>
+                 <br>
+                 <a href='/'>Back to Home</a>`);
+          })
+          .catch((error) => {
+            console.error(error);
+            res.send(`<p>${error}</p>
+                 <br>
+                 <a href='/'>Back to Home</a>`);
+          });
+      }
     }
   });
 });
@@ -134,26 +63,79 @@ app.post("/upload", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
-
-function setVideoMetadata(inputPath, metadata) {
+// upload a single file with setting the metadata manually
+function setMetadataAndUploadTrack(inputFilePath, fields, originalFilename) {
   return new Promise((resolve, reject) => {
-    ffmpeg.ffprobe(inputPath, (err, metadataInfo) => {
+    ffmpeg.ffprobe(inputFilePath, (err) => {
       if (err) {
         reject(err);
         return;
       }
+      // metadata keys can be added according to ffmpeg docs
+      const metadata = {
+        title:
+          fields.titleSwitch == "on"
+            ? removeFileExtension(originalFilename)
+            : fields.title,
+        artist: fields.artist,
+        album: fields.album,
+        year: fields.year,
+        genre: fields.genre,
+      };
+
       // Set file Name
-      const outputFilename = musicDir + metadata.title + ".mp3";
+      const outputFilename = musicDir + cleanForFileName(metadata.title) + ".mp3";
       const outputOptions = [];
 
+      console.log(outputFilename);
       // Set the metadata
       for (const key in metadata) {
         if (metadata.hasOwnProperty(key)) {
+// THE METADATA DOESNT TAKE WHITESPACES FOR SOME REASON
           outputOptions.push("-metadata", `${key}=${metadata[key]}`);
         }
       }
       const command = ffmpeg()
-        .input(inputPath)
+        .input(inputFilePath)
+        .outputOptions(outputOptions)
+        .on("end", () => resolve(outputFilename))
+        .on("error", (err) => reject(err))
+        .save(outputFilename);
+    });
+  });
+}
+
+// upload a single file with keeping all the metadata from the original file
+function keepMetadataAndUploadTrack(inputFilePath) {
+  return new Promise((resolve, reject) => {
+    ffmpeg.ffprobe(inputFilePath, function (err, metadata) {
+      if (err) {
+        reject(err);
+        return;
+      }
+      // Grab the original metadata
+      const originalMetadata = {
+        title: metadata.streams[0].tags.title,
+        artist: metadata.streams[0].tags.artist,
+        album: metadata.streams[0].tags.album,
+        year: metadata.streams[0].tags.year,
+        genre: metadata.streams[0].tags.genre,
+      };
+
+      const outputOptions = [];
+
+      // Set the metadata
+      for (const key in originalMetadata) {
+        if (originalMetadata.hasOwnProperty(key)) {
+          outputOptions.push(`-metadata ${key}=${originalMetadata[key]}`);
+        }
+      }
+      // clean the title and set it as a name of the file
+      const outputFilename = `${musicDir}${cleanForFileName(originalMetadata.title)}.mp3`;
+      console.log(outputFilename);
+
+      const command = ffmpeg()
+        .input(inputFilePath)
         .outputOptions(outputOptions)
         .on("end", () => resolve(outputFilename))
         .on("error", (err) => reject(err))
@@ -163,11 +145,17 @@ function setVideoMetadata(inputPath, metadata) {
 }
 
 // remove the extension of filename and sanitize it if needed to use as title
-function cleanFileNameForTitle(fileName) {
-  cleanFileName = fileName.replace(/[:<>"/\\|?*\s]/g, "_");
-  const lastDotIndex = cleanFileName.lastIndexOf(".");
+function cleanForFileName(x) {
+  console.log(x)
+  //THIS IS NOT SUPPOSED TO BE AN OBJECT
+  x[0].replace(/[:<>"/\\|?*\s]/g, "_");
+  var y = removeFileExtension(x)
+  return y
+}
+function removeFileExtension(fileName){
+  const lastDotIndex = fileName.lastIndexOf(".");
   if (lastDotIndex !== -1) {
-    return cleanFileName.substring(0, lastDotIndex);
+    return fileName.substring(0, lastDotIndex);
   }
-  return cleanFileName;
+  return fileName;
 }
